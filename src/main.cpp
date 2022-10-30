@@ -22,15 +22,15 @@ int main(void)
     auto *q = new Queue<int>();
     auto *list = new LinkedList<int>();
 
-    N = get_random_int(1, 20); // N from 5 to 50
+    N = get_random_int(5, 50); // N from 5 to 50
     std::cout << "Value choosen for N is: " << N << std::endl;
-    K = get_random_int(1, 10); // K from 5 to 15
+    K = get_random_int(4, 7); // K from 5 to 15
     std::cout << "Value choosen for K is: " << K << std::endl;
 
     std::cout << "Generating a random time between 15 and 50 minutes for each patient..." << std::endl;
     for (int i = 0; i < N; i++)
     {
-        time = get_random_int(1, 15);
+        time = get_random_int(15, 50);
         q->enqueue(time);
         std::cout << "Patient " << (i + 1) << " random time to be seen by medical staff is: " << time << " minutes" << std::endl;
     }
