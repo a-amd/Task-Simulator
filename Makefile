@@ -1,54 +1,48 @@
-CXX ?= g++
+CXX      := -c++
+CXXFLAGS := -std=c++17 #-pedantic-errors -Wall -Wextra -Werror
+LDFLAGS  := -L/usr/lib -lstdc++ -lm
+BUILD    := ./build
+OBJ_DIR  := $(BUILD)/objects
+BIN_DIR  := $(BUILD)/bin
+TARGET   := runner
+INCLUDE  := -Iinclude/
+SRC      := $(wildcard src/*.cpp)
 
-SRC_PATH = src
-BUILD_PATH = build
-BIN_PATH = $(BUILD_PATH)/bin
+OBJECTS  := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
+DEPENDENCIES \
+         := $(OBJECTS:.o=.d)
 
-BIN_NAME = runner
-SRC_EXT = cpp
+all: build $(BIN_DIR)/$(TARGET)
 
-SOURCES = $(shell find $(SRC_PATH) -name '*.$(SRC_EXT)' -printf '%T@ %p\n' | sort -k 1nr | cut -d ' ' -f 2)
-OBJECTS = $(SOURCES:$(SRC_PATH)/%.$(SRC_EXT)=$(BUILD_PATH)/%.o)
-DEPS = $(OBJECTS:.o=.d)
+$(OBJ_DIR)/%.o: %.cpp
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -MMD -o $@
 
-COMPILE_FLAGS = -std=c++17 -Wall -Wextra -g
-INCLUDES = -I include/ -I /usr/local/include
-LIBS =
+$(BIN_DIR)/$(TARGET): $(OBJECTS)
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) -o $(BIN_DIR)/$(TARGET) $^ $(LDFLAGS)
 
-.PHONY: default_target
-default_target: release
+-include $(DEPENDENCIES)
 
-.PHONY: release
-release: export CXXFLAGS := $(CXXFLAGS) $(COMPILE_FLAGS)
-release: dirs
-	@$(MAKE) all
+.PHONY: all build clean debug release info
 
-.PHONY: dirs
-dirs:
-	@echo "Creating directories"
-	@mkdir -p $(dir $(OBJECTS))
-	@mkdir -p $(BIN_PATH)
+build:
+	@mkdir -p $(BIN_DIR)
+	@mkdir -p $(OBJ_DIR)
 
-.PHONY: clean
+debug: CXXFLAGS += -DDEBUG -g
+debug: all
+
+release: CXXFLAGS += -O2
+release: all
+
 clean:
-	@echo "Deleting $(BIN_NAME) symlink"
-	@$(RM) $(BIN_NAME)
-	@echo "Deleting directories"
-	@$(RM) -r $(BUILD_PATH)
-	@$(RM) -r $(BIN_PATH)
+	-@rm -rvf $(OBJ_DIR)/*
+	-@rm -rvf $(BIN_DIR)/*
 
-.PHONY: all
-all: $(BIN_PATH)/$(BIN_NAME)
-	@echo "Making symlink: $(BIN_NAME) -> $<"
-	@$(RM) $(BIN_NAME)
-	@ln -s $(BIN_PATH)/$(BIN_NAME) $(BIN_NAME)
-
-$(BIN_PATH)/$(BIN_NAME): $(OBJECTS)
-	@echo "Linking: $@"
-	$(CXX) $(OBJECTS) -o $@ ${LIBS}
-
--include $(DEPS)
-
-$(BUILD_PATH)/%.o: $(SRC_PATH)/%.$(SRC_EXT)
-	@echo "Compiling: $< -> $@"
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -MP -MMD -c $< -o $@
+info:
+	@echo "[*] Binary dir: ${BIN_DIR}     "
+	@echo "[*] Object dir:      ${OBJ_DIR}     "
+	@echo "[*] Sources:         ${SRC}         "
+	@echo "[*] Objects:         ${OBJECTS}     "
+	@echo "[*] Dependencies:    ${DEPENDENCIES}"
